@@ -28,7 +28,7 @@ profile = sys.argv[3]
 serial_modules = sys.argv[4].split()
 fix_failure_tests = sys.argv[5].lower() == 'true' if len(sys.argv) >= 6 else False
 working_directory = "/home/cloudtest/work/1/s"
-azdev_test_result_dir = "/home/cloudtest/.azdev/env_config/home/vsts/work/1/s/env"
+azdev_test_result_dir = "/home/cloudtest/.azdev/env_config/home/cloudtest/work/1/s/env"
 jobs = {
             'acr': 45,
             'acs': 62,
