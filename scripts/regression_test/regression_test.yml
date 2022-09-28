@@ -124,7 +124,7 @@ jobs:
       displayName: "Rerun tests"
     - task: PublishTestResults@2
       inputs:
-        testResultsFiles: '/home/vsts/.azdev/env_config/home/vsts/work/1/s/env/test_results_*.xml'
+        testResultsFiles: '/home/cloudtest/.azdev/env_config/home/cloudtest/work/1/s/env/test_results_*.xml'
         testRunTitle: 'CLI Regression test results of instance $(Instance_idx)'
 
 - job: CreatePR
