@@ -113,7 +113,7 @@ jobs:
     - template: ../../.azure-pipelines/templates/azdev_setup.yml
     - bash: |
         set -ev
-        chmod 777 /home/vsts
+        git status
         source env/bin/activate
 
         az login -u $(CLI_LIVE_TEST_ACCOUNT) -p "$(CLI_LIVE_TEST_PASSWORD)"
