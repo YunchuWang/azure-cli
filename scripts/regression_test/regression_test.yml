@@ -13,7 +13,7 @@ jobs:
   displayName: CLI Bump Version Update Version Files
   condition: ne(variables['PACKAGE'], '')
   pool:
-    vmImage: 'ubuntu-20.04'
+    name: 'pool-ubuntu-2004'
   steps:
     - task: UsePythonVersion@0
       inputs:
@@ -81,7 +81,7 @@ jobs:
       instance8:
         Instance_idx: 8
   pool:
-    vmImage: 'ubuntu-20.04'
+    name: 'pool-ubuntu-2004'
   steps:
     - task: UsePythonVersion@0
       inputs:
@@ -131,7 +131,7 @@ jobs:
   displayName: CLI Regression Test Create PR
   dependsOn: RerunTests
   pool:
-    vmImage: 'ubuntu-20.04'
+    name: 'pool-ubuntu-2004'
   steps:
     - task: AzureCLI@1
       displayName: 'Create PR'
