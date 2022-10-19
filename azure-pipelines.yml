@@ -238,6 +238,8 @@ jobs:
         }
         Start-Process "msiexec.exe" -ArgumentList $InstallArgs -Wait -NoNewWindow
         $install_time=Measure-Command {Start-Process "msiexec.exe" -ArgumentList $InstallArgs -Wait -NoNewWindow} | select -expand TotalSeconds
+        echo $install_time
+        Get-Content .\install_logs.txt
         $installed_version=az version --query '\"azure-cli\"' -o tsv
         if ($installed_version -ne $to_be_installed_version){
           echo "The MSI failed to install."
@@ -247,7 +249,7 @@ jobs:
         az --version
         # Test bundled pip with extension installation
         az extension add -n rdbms-connect
-        az self-test
+        az self-test --debug
         
         Get-Content .\install_logs.txt
 
