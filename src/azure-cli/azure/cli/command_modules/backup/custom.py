@@ -30,7 +30,7 @@ from azure.mgmt.recoveryservicesbackup.passivestamp.models import CrrJobRequest,
 
 import azure.cli.command_modules.backup._validators as validators
 from azure.cli.core.util import CLIError
-from azure.core.exceptions import HttpResponseError
+from azure.core.exceptions import HttpResponseError, ResourceNotFoundError as CoreResourceNotFoundError
 from azure.cli.core.azclierror import RequiredArgumentMissingError, InvalidArgumentValueError, \
     MutuallyExclusiveArgumentError, ArgumentUsageError, ValidationError, ResourceNotFoundError
 from azure.cli.command_modules.backup._client_factory import (
@@ -112,14 +112,26 @@ password_length = 15
 # pylint: disable=too-many-function-args
 
 
-def create_vault(client, vault_name, resource_group_name, location, tags=None, classic_alerts='Enable',
-                 azure_monitor_alerts_for_job_failures='Enable'):
+def create_vault(client, vault_name, resource_group_name, location, tags=None, public_network_access=None,
+                 classic_alerts='Enable', azure_monitor_alerts_for_job_failures='Enable'):
     vault_sku = Sku(name=SkuName.standard)
+    if public_network_access is None:
+        # get the existing value of public_network_access so the request is made correctly
+        try:
+            existing_vault_if_any = client.get(resource_group_name, vault_name)
+            existing_vault_public_network_access = existing_vault_if_any.properties.public_network_access
+            # TODO add better validation for existing_vault_public_network_access? It might be invalid.
+            #   Maybe have a list of possible values and iterate through, and if not add a warning to
+            #   contact support? Such as: if public_network_access in [list], <action>, else <warn user>.
+            public_network_access = existing_vault_public_network_access[:-1]
+        except CoreResourceNotFoundError:
+            public_network_access = 'Enable'
     vault_properties = VaultProperties(
         monitoring_settings=MonitoringSettings(
             azure_monitor_alert_settings=AzureMonitorAlertSettings(
                 alerts_for_all_job_failures=azure_monitor_alerts_for_job_failures + 'd'),
-            classic_alert_settings=ClassicAlertSettings(alerts_for_critical_operations=classic_alerts + 'd')))
+            classic_alert_settings=ClassicAlertSettings(alerts_for_critical_operations=classic_alerts + 'd')),
+        public_network_access=public_network_access + 'd')
     vault = Vault(location=location, sku=vault_sku, properties=vault_properties, tags=tags)
     return client.begin_create_or_update(resource_group_name, vault_name, vault)
 
@@ -953,13 +965,13 @@ def _get_trigger_restore_properties(rp_name, vault_location, storage_account_id,
                                     source_resource_id, target_rg_id,
                                     use_original_storage_account, restore_disk_lun_list,
                                     rehydration_duration, rehydration_priority, tier, disk_encryption_set_id,
-                                    encryption, recovery_point, use_secondary_region, mi_system_assigned,
+                                    encryption, recovery_point, mi_system_assigned,
                                     mi_user_assigned, restore_mode):
 
     if disk_encryption_set_id is not None:
         if not(encryption.properties.encryption_at_rest_type == "CustomerManaged" and
                recovery_point.properties.is_managed_virtual_machine and
-               not(recovery_point.properties.is_source_vm_encrypted) and use_secondary_region is None):
+               not recovery_point.properties.is_source_vm_encrypted):
             raise InvalidArgumentValueError("disk_encryption_set_id can't be specified")
 
     identity_info = None
@@ -1154,8 +1166,8 @@ def restore_disks(cmd, client, resource_group_name, vault_name, container_name, 
                                                                  None if recovery_point.
                                                                  properties.recovery_point_tier_details is None else
                                                                  recovery_point.tier_type, disk_encryption_set_id,
-                                                                 encryption, recovery_point, use_secondary_region,
-                                                                 mi_system_assigned, mi_user_assigned, restore_mode)
+                                                                 encryption, recovery_point, mi_system_assigned,
+                                                                 mi_user_assigned, restore_mode)
 
     _set_trigger_restore_properties(cmd, trigger_restore_properties, target_vm_name, target_vnet_name,
                                     target_vnet_resource_group, target_subnet_name, vault_name, resource_group_name,
